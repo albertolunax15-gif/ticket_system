@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <title>Iniciar Sesión</title>
+  <style>
+    /* Reset básico */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f5fa, #e6edf7);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login_wrapper {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(13, 93, 162, 0.1);
+      overflow: hidden;
+      width: 100%;
+      max-width: 420px;
+      transition: transform 0.3s ease;
+      animation: slideUp 0.6s ease-out forwards;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login_header {
+      background: linear-gradient(135deg, #e4e6e7 0%, #aeb3b8 100%);
+      padding: 40px 25px 30px;
+      text-align: center;
+      color: white;
+    }
+
+    .logo_container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .logo_svg_container svg {
+      width: 70px;
+      height: 70px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    .system_title {
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: 1px;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .login_form {
+      padding: 35px;
+      background: #fafbfd;
+    }
+
+    .form_group {
+      margin-bottom: 22px;
+      position: relative;
+    }
+
+    .form_input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #e1e8ed;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #fff;
+      outline: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    }
+
+    .form_input:focus {
+      border-color: #0D5DA2;
+      box-shadow: 0 0 0 3px rgba(13, 93, 162, 0.15);
+      background: #fff;
+    }
+
+    .form_input::placeholder {
+      color: #adb5bd;
+    }
+
+    .login_button {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #0D5DA2 0%, #003871 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+      box-shadow: 0 4px 10px rgba(13, 93, 162, 0.3);
+    }
+
+    .login_button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(13, 93, 162, 0.4);
+    }
+
+    .login_button:active {
+      transform: translateY(0);
+    }
+
+    .login_footer {
+      padding: 25px;
+      text-align: center;
+      background: #fafbfd;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .forgot_password {
+      color: #6c757d;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s ease;
+    }
+
+    .forgot_password:hover {
+      color: #0D5DA2;
+    }
+
+    /* Estados de validación */
+    .form_input.error {
+      border-color: #e74c3c;
+      background: #fdf2f2;
+    }
+
+    .form_input.success {
+      border-color: #0D5DA2;
+      background: #f0f8ff;
+    }
+
+    /* Media Queries */
+    @media (max-width: 480px) {
+      .login_wrapper {
+        margin: 10px;
+        max-width: 100%;
+      }
+
+      .login_header {
+        padding: 30px 20px 20px;
+      }
+
+      .logo_svg_container {
+        width: 80px;
+        height: 80px;
+      }
+
+      .system_title {
+        font-size: 22px;
+      }
+
+      .login_form {
+        padding: 25px 15px;
+      }
+
+      .form_input {
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .login_button {
+        padding: 12px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .login_wrapper {
+        margin: 5px;
+      }
+
+      .login_header {
+        padding: 25px 15px 15px;
+      }
+
+      .system_title {
+        font-size: 18px;
+      }
+
+      .login_form {
+        padding: 20px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login_wrapper">
+    <div class="login_header">
+      <div class="logo_container">
+        <img src="/images/recupera.svg" alt="Ticket System Logo" style="width: 170px; height: 170px;" />
+      </div>
+    </div>
+
+    <form class="login_form" action="/auth/login" method="POST">
+      <!-- Mensajes de error del servidor -->
+      <% if (error_msg && error_msg.length > 0) { %>
+        <div class="form_group">
+          <div class="alert alert-danger" style="background: #fdf2f2; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; color: #a94442; text-align: left;">
+            <%= error_msg %>
+          </div>
+        </div>
+      <% } %>
+      
+      <% if (error && error.length > 0) { %>
+        <div class="form_group">
+          <div class="alert alert-danger" style="background: #fdf2f2; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; color: #a94442; text-align: left;">
+            <%= error %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="form_group">
+        <input 
+          type="text" 
+          class="form_input" 
+          name="username" 
+          placeholder="Nombre de usuario"
+          required 
+        />
+      </div>
+
+      <div class="form_group">
+        <input 
+          type="password" 
+          class="form_input" 
+          name="password" 
+          placeholder="Contraseña"
+          required 
+        />
+      </div>
+
+      <button type="submit" class="login_button">
+        Iniciar Sesión
+      </button>
+    </form>
+
+    <div class="login_footer">
+      <a href="#" class="forgot_password">¿Olvidaste tu contraseña?</a>
+    </div>
+  </div>
+</body>
+</html>

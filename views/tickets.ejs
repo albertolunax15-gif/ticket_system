@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Gestión de Tickets' }) %>
+</head>
+<body class="nav-md">
+  <div class="container body">
+    <div class="main_container">
+      <%- include('partials/sidebar') %>
+      
+      <!-- top navigation -->
+      <%- include('partials/header') %>
+      <!-- /top navigation -->
+
+      <!-- page content -->
+      <div class="right_col" role="main" id="ticketApp">
+        <div class="">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Gestión de Tickets</h3>
+            </div>
+
+            <div class="title_right">
+              <div class="col-md-5 col-sm-5 col-xs-12 form-group pull-right top_search">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Buscar tickets..." v-model="searchTerm" @input="filtrarTickets">
+                  <span class="input-group-btn">
+                    <button class="btn btn-secondary" type="button" @click="limpiarBusqueda">Limpiar</button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- INDICADOR DE CARGA -->
+          <div v-if="cargando" class="text-center">
+            <i class="fa fa-spinner fa-spin fa-2x"></i>
+            <p>Cargando tickets...</p>
+          </div>
+
+          <!-- MENSAJE SI NO HAY DATOS -->
+          <div v-if="!cargando && tickets.length === 0" class="alert alert-info">
+            <i class="fa fa-info-circle"></i> No hay tickets disponibles.
+            <button class="btn btn-primary btn-sm ml-2" @click="cargarTickets">
+              <i class="fa fa-refresh"></i> Recargar
+            </button>
+          </div>
+
+          <div class="row" v-if="!cargando">
+            <div class="col-md-12 col-sm-12 ">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h2>Lista de Tickets <small>Total: {{ tickets.length }}</small></h2>
+                  <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <div class="card-box table-responsive">
+                        <p class="text-muted font-13 m-b-30">
+                          Sistema de gestión de tickets de soporte. Puede crear, editar, ver y eliminar tickets desde esta interfaz.
+                        </p>
+                        <div class="mb-3">
+                          <button class="btn btn-primary" @click="abrirModalNuevo">
+                            Nuevo Ticket
+                          </button>
+                          <button class="btn btn-info ml-2" @click="cargarTickets">
+                            <i class="fa fa-refresh"></i> Refrescar
+                          </button>
+                        </div>
+                        
+                        <!-- TABLA SIMPLE SIN DATATABLES PRIMERO -->
+                        <div class="table-responsive">
+                          <table class="table table-striped table-bordered">
+                            <thead>
+                              <tr>
+                                <th>ID</th>
+                                <th>Estado</th>
+                                <th>Asunto</th>
+                                <th>Categoría</th>
+                                <th>Prioridad</th>
+                                <th>Fecha de Actualización</th>
+                                <th>Acciones</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="ticket in ticketsFiltrados" :key="ticket.id">
+                                <td>{{ ticket.id }}</td>
+                                <td>
+                                  <span :class="getStatusClass(ticket.status)">{{ ticket.status }}</span>
+                                </td>
+                                <td>{{ ticket.subject }}</td>
+                                <td>{{ ticket.category }}</td>
+                                <td>
+                                  <span :class="getPriorityClass(ticket.priority)">{{ ticket.priority }}</span>
+                                </td>
+                                <td>{{ formatDate(ticket.updated_at) }}</td>
+                                <td>
+                                  <button class="btn btn-info btn-xs" @click="verTicket(ticket)">
+                                    <i class="fa fa-eye"></i>
+                                  </button>
+                                  <button class="btn btn-primary btn-xs" @click="editarTicket(ticket)">
+                                    <i class="fa fa-edit"></i>
+                                  </button>
+                                  <button class="btn btn-danger btn-xs" @click="confirmarEliminar(ticket.id)">
+                                    <i class="fa fa-trash"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                              <tr v-if="ticketsFiltrados.length === 0 && !cargando">
+                                <td colspan="7" class="text-center">No se encontraron tickets</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modales (mantener los mismos) -->
+        <!-- Modal Nuevo/Editar Ticket -->
+        <div class="modal fade" id="ticketModal" tabindex="-1" role="dialog">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">{{ modalTitle }}</h4>
+                <button type="button" class="close" data-dismiss="modal">
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form @submit.prevent="guardarTicket">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label>Asunto *</label>
+                        <input type="text" class="form-control" v-model="ticketForm.subject" required>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label>Categoría *</label>
+                        <select class="form-control" v-model="ticketForm.category" required>
+                          <option value="">Seleccionar categoría</option>
+                          <option value="Técnico">Técnico</option>
+                          <option value="Soporte">Soporte</option>
+                          <option value="Consulta">Consulta</option>
+                          <option value="Reclamo">Reclamo</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label>Prioridad *</label>
+                        <select class="form-control" v-model="ticketForm.priority" required>
+                          <option value="">Seleccionar prioridad</option>
+                          <option value="Baja">Baja</option>
+                          <option value="Media">Media</option>
+                          <option value="Alta">Alta</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-6" v-if="isEditing">
+                      <div class="form-group">
+                        <label>Estado</label>
+                        <select class="form-control" v-model="ticketForm.status">
+                          <option value="Abierto">Abierto</option>
+                          <option value="En Proceso">En Proceso</option>
+                          <option value="Cerrado">Cerrado</option>
+                          <option value="Pendiente">Pendiente</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea class="form-control" rows="4" v-model="ticketForm.description" placeholder="Describe el problema o consulta..."></textarea>
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" @click="guardarTicket" :disabled="loading">
+                  <i class="fa fa-spinner fa-spin" v-if="loading"></i>
+                  {{ isEditing ? 'Actualizar' : 'Crear' }} Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Ver Ticket -->
+        <div class="modal fade" id="verTicketModal" tabindex="-1" role="dialog">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">Detalles del Ticket #{{ ticketDetalle.id }}</h4>
+                 <button type="button" class="close" data-dismiss="modal">
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="row" v-if="ticketDetalle.id">
+                  <div class="col-md-6">
+                    <strong>ID:</strong> {{ ticketDetalle.id }}<br>
+                    <strong>Asunto:</strong> {{ ticketDetalle.subject }}<br>
+                    <strong>Categoría:</strong> {{ ticketDetalle.category }}<br>
+                    <strong>Usuario:</strong> 
+                    <span v-if="ticketDetalle.User && ticketDetalle.User.name">
+                      {{ ticketDetalle.User.name }} {{ ticketDetalle.User.lastname }}
+                    </span>
+                    <span v-else class="text-muted">No disponible</span>
+                  </div>
+                  <div class="col-md-6">
+                    <strong>Estado:</strong> 
+                    <span :class="getStatusClass(ticketDetalle.status)">{{ ticketDetalle.status }}</span><br>
+                    <strong>Prioridad:</strong> 
+                    <span :class="getPriorityClass(ticketDetalle.priority)">{{ ticketDetalle.priority }}</span><br>
+                    <strong>Creado:</strong> {{ formatDate(ticketDetalle.created_at) }}<br>
+                    <strong>Actualizado:</strong> {{ formatDate(ticketDetalle.updated_at) }}
+                  </div>
+                </div>
+                <div class="row" v-if="ticketDetalle.description">
+                  <div class="col-md-12">
+                    <hr>
+                    <strong>Descripción:</strong>
+                    <p>{{ ticketDetalle.description }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @click="editarDesdeDetalle">
+                  <i class="fa fa-edit"></i> Editar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Confirmar Eliminación -->
+        <div class="modal fade" id="confirmarModal" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">Confirmar Eliminación</h4>
+                <button type="button" class="close" data-dismiss="modal">
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el ticket #{{ ticketAEliminar }}?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" @click="eliminarTicket" :disabled="loading">
+                  <i class="fa fa-spinner fa-spin" v-if="loading"></i>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /page content -->
+
+      <!-- footer content -->
+      <footer>
+        <div class="pull-right">
+          Sistema de Tickets - Template by <a href="https://colorlib.com">Colorlib</a>
+        </div>
+        <div class="clearfix"></div>
+      </footer>
+      <!-- /footer content -->
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+  
+  <!-- DATOS DEL SERVIDOR - ESTA LÍNEA ERA LA QUE FALTABA -->
+  <script type="application/json" id="tickets-json">
+    <%- JSON.stringify(tickets) %>
+  </script>
+  
+  <script>
+    console.log('Iniciando aplicación Vue...');
+    
+    new Vue({
+      el: "#ticketApp",
+      data: {
+        tickets: [],
+        ticketsFiltrados: [],
+        searchTerm: "",
+        loading: false,
+        cargando: true, // Nueva variable para mostrar estado de carga
+        isEditing: false,
+        modalTitle: "Nuevo Ticket",
+        ticketForm: {
+          id: null,
+          subject: "",
+          category: "",
+          priority: "",
+          status: "Abierto",
+          description: "",
+        },
+        ticketDetalle: {},
+        ticketAEliminar: null,
+      },
+      mounted() {
+        console.log('Vue montado, cargando datos...');
+        this.cargarDatosIniciales();
+      },
+      methods: {
+        // Cargar datos iniciales
+        cargarDatosIniciales() {
+          console.log('Intentando cargar datos...');
+          this.cargando = true;
+          
+          try {
+            // Método 1: Desde elemento JSON
+            const ticketsElement = document.getElementById("tickets-json");
+            if (ticketsElement && ticketsElement.textContent.trim()) {
+              console.log('Elemento JSON encontrado:', ticketsElement.textContent);
+              const ticketsData = JSON.parse(ticketsElement.textContent);
+              this.tickets = Array.isArray(ticketsData) ? ticketsData : [];
+              this.ticketsFiltrados = [...this.tickets];
+              console.log('Datos cargados desde JSON:', this.tickets.length, 'tickets');
+              this.cargando = false;
+              return;
+            }
+            
+            // Método 2: Cargar vía AJAX si no hay elemento JSON
+            console.log('No se encontró elemento JSON, cargando vía AJAX...');
+            this.cargarTickets();
+            
+          } catch (error) {
+            console.error("Error al cargar datos:", error);
+            this.cargarTickets(); // Fallback a AJAX
+          }
+        },
+
+        // Cargar tickets vía AJAX
+        cargarTickets() {
+          console.log('Cargando tickets vía AJAX...');
+          this.cargando = true;
+          
+          // Usar fetch para cargar datos
+          fetch('/tickets/api', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Datos recibidos vía AJAX:', data);
+            this.tickets = Array.isArray(data) ? data : [];
+            this.ticketsFiltrados = [...this.tickets];
+            this.cargando = false;
+          })
+          .catch(error => {
+            console.error('Error al cargar tickets vía AJAX:', error);
+            // Si falla AJAX, usar datos de prueba
+            this.usarDatosPrueba();
+          });
+        },
+
+        // Datos de prueba como último recurso
+        usarDatosPrueba() {
+          console.log('Usando datos de prueba...');
+          this.tickets = [
+            {
+              id: 1,
+              status: 'Abierto',
+              subject: 'Ticket de prueba',
+              category: 'Técnico',
+              priority: 'Media',
+              description: 'Este es un ticket de prueba',
+              user_id: 1,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ];
+          this.ticketsFiltrados = [...this.tickets];
+          this.cargando = false;
+        },
+
+        // Filtrar tickets localmente
+        filtrarTickets() {
+          if (!this.searchTerm.trim()) {
+            this.ticketsFiltrados = [...this.tickets];
+            return;
+          }
+
+          const termino = this.searchTerm.toLowerCase();
+          this.ticketsFiltrados = this.tickets.filter(ticket => 
+            (ticket.subject && ticket.subject.toLowerCase().includes(termino)) ||
+            (ticket.category && ticket.category.toLowerCase().includes(termino)) ||
+            (ticket.status && ticket.status.toLowerCase().includes(termino)) ||
+            (ticket.priority && ticket.priority.toLowerCase().includes(termino))
+          );
+        },
+
+        // Limpiar búsqueda
+        limpiarBusqueda() {
+          this.searchTerm = "";
+          this.ticketsFiltrados = [...this.tickets];
+        },
+
+        // Abrir modal para nuevo ticket
+        abrirModalNuevo() {
+          this.isEditing = false;
+          this.modalTitle = "Nuevo Ticket";
+          this.resetForm();
+          $("#ticketModal").modal("show");
+        },
+
+        // Ver detalles del ticket
+        verTicket(ticket) {
+          this.ticketDetalle = { ...ticket };
+          $("#verTicketModal").modal("show");
+        },
+
+        // Editar ticket
+        editarTicket(ticket) {
+          this.isEditing = true;
+          this.modalTitle = `Editar Ticket #${ticket.id}`;
+          this.ticketForm = {
+            id: ticket.id,
+            subject: ticket.subject || "",
+            category: ticket.category || "",
+            priority: ticket.priority || "",
+            status: ticket.status || "Abierto",
+            description: ticket.description || "",
+          };
+          $("#ticketModal").modal("show");
+        },
+
+        // Editar desde modal de detalles
+        editarDesdeDetalle() {
+          $("#verTicketModal").modal("hide");
+          this.editarTicket(this.ticketDetalle);
+        },
+
+        // Guardar ticket
+        guardarTicket() {
+          if (!this.validarFormulario()) {
+            return;
+          }
+
+          this.loading = true;
+          
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = this.isEditing ? `/tickets/${this.ticketForm.id}/update` : "/tickets/create";
+
+          Object.keys(this.ticketForm).forEach((key) => {
+            if (key !== "id" && this.ticketForm[key] !== null && this.ticketForm[key] !== "") {
+              const input = document.createElement("input");
+              input.type = "hidden";
+              input.name = key;
+              input.value = this.ticketForm[key];
+              form.appendChild(input);
+            }
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+        },
+
+        // Confirmar eliminación
+        confirmarEliminar(id) {
+          this.ticketAEliminar = id;
+          $("#confirmarModal").modal("show");
+        },
+
+        // Eliminar ticket
+        eliminarTicket() {
+          this.loading = true;
+          
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = `/tickets/${this.ticketAEliminar}/delete`;
+
+          document.body.appendChild(form);
+          form.submit();
+        },
+
+        // Validar formulario
+        validarFormulario() {
+          if (!this.ticketForm.subject || !this.ticketForm.subject.trim()) {
+            alert("El asunto es requerido");
+            return false;
+          }
+          if (!this.ticketForm.category) {
+            alert("La categoría es requerida");
+            return false;
+          }
+          if (!this.ticketForm.priority) {
+            alert("La prioridad es requerida");
+            return false;
+          }
+          return true;
+        },
+
+        // Reset formulario
+        resetForm() {
+          this.ticketForm = {
+            id: null,
+            subject: "",
+            category: "",
+            priority: "",
+            status: "Abierto",
+            description: "",
+          };
+        },
+
+        // Obtener clase CSS para estado
+        getStatusClass(status) {
+          const classes = {
+            Abierto: "label label-success",
+            "En Proceso": "label label-warning",
+            Cerrado: "label label-default",
+            Pendiente: "label label-info",
+          };
+          return classes[status] || "label label-default";
+        },
+
+        // Obtener clase CSS para prioridad
+        getPriorityClass(priority) {
+          const classes = {
+            Alta: "label label-danger",
+            Media: "label label-warning",
+            Baja: "label label-success",
+          };
+          return classes[priority] || "label label-default";
+        },
+
+        // Formatear fecha
+        formatDate(dateString) {
+          if (!dateString) return "";
+          try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("es-ES") + " " + date.toLocaleTimeString("es-ES", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          } catch (error) {
+            return dateString;
+          }
+        }
+      },
+    });
+  </script>
+  <%- include('partials/scripts') %>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Dashboard' }) %>
+</head>
+<body class="nav-md">
+  <div class="container body">
+    <div class="main_container">
+      <%- include('partials/sidebar') %>
+      
+      <!-- top navigation -->
+      <%- include('partials/header') %>
+      <!-- /top navigation -->
+      
+      <!-- page content -->
+      <div class="right_col" role="main">
+        <div class="">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Dashboard <small>Sistema de soporte técnico</small></h3>
+            </div>
+          </div>
+          <div class="clearfix"></div>
+          <div class="row">
+            <div class="col-md-12 col-sm-12">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h2>Bienvenido al Sistema de Tickets</h2>
+                  <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                  <p>Bienvenido al panel de administración del sistema de tickets de soporte técnico.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /page content -->
+      
+      <!-- footer content -->
+      <footer>
+        <div class="pull-right">
+          Sistema de Tickets - Template by <a href="https://colorlib.com">Colorlib</a>
+        </div>
+        <div class="clearfix"></div>
+      </footer>
+      <!-- /footer content -->
+    </div>
+  </div>
+  
+  <%- include('partials/scripts') %>
+</body>
+</html>
