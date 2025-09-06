@@ -33,16 +33,36 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 8. Sesiones
+// 8. Sesiones — ¡AHORA CON STORE EN MYSQL!
+const MySQLStore = require('express-mysql-session')(session);
+
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  createDatabaseTable: true, // ← Crea la tabla 'sessions' si no existe
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'clave-secreta-muy-segura',
     resave: false,
     saveUninitialized: false,
+    store: sessionStore, // ← ¡ESTO ES LO QUE FALTABA!
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
-      maxAge: 24 * 60 * 60 * 1000 // 24 horas
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000
     }
   })
 );
