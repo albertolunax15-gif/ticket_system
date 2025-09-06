@@ -8,7 +8,7 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    dialectModule: require('mysql2') // ← importante
+    dialectModule: require('mysql2')
   },
   test: {
     username: process.env.DB_USER,
@@ -26,6 +26,12 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    dialectModule: require('mysql2')
+    dialectModule: require('mysql2'),
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false // ← ¡SIN ESTO, RENDER TE ODIA!
+      }
+    }
   }
 };
