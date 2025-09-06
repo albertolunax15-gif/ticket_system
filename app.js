@@ -25,6 +25,9 @@ app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+// 7.5. ¡TRUST PROXY! (Render está detrás de un proxy)
+app.set('trust proxy', 1); // ← ¡ESTO ES CLAVE PARA QUE FUNCIONE SECURE: TRUE!
+
 // 7. Middlewares
 app.use(morgan('dev'));
 
@@ -33,7 +36,8 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 8. Sesiones — ¡AHORA CON STORE EN MYSQL!
+// 8. Sesiones — ¡CORREGIDO PARA MYSQL EN RENDER!
+const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 
 const sessionStore = new MySQLStore({
@@ -42,7 +46,7 @@ const sessionStore = new MySQLStore({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  createDatabaseTable: true, // ← Crea la tabla 'sessions' si no existe
+  createDatabaseTable: true,
   schema: {
     tableName: 'sessions',
     columnNames: {
@@ -58,11 +62,12 @@ app.use(
     secret: process.env.SESSION_SECRET || 'clave-secreta-muy-segura',
     resave: false,
     saveUninitialized: false,
-    store: sessionStore, // ← ¡ESTO ES LO QUE FALTABA!
+    store: sessionStore, // ← SIN ESTO, NO HAY SESIÓN EN PRODUCCIÓN
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000
+      secure: process.env.NODE_ENV === 'production', // ← Solo true si estás en HTTPS
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // ← ¡CLAVE PARA RENDER!
     }
   })
 );
