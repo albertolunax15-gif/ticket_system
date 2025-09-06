@@ -1,5 +1,7 @@
 // 1. Cargar variables de entorno
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 // 2. Importar dependencias
 const express = require('express');
@@ -8,9 +10,10 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const morgan = require('morgan');
 const path = require('path');
+const MySQLStore = require('express-mysql-session')(session); // ← Usa la misma sesión
 
 // 3. Importar modelos y configurar BD
-const db = require('./models'); // ← Sequelize maneja la conexión
+const db = require('./models');
 
 // 4. Importar rutas
 const indexRoutes = require('./routes/index');
@@ -26,20 +29,15 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // 7.5. ¡TRUST PROXY! (Render está detrás de un proxy)
-app.set('trust proxy', 1); // ← ¡ESTO ES CLAVE PARA QUE FUNCIONE SECURE: TRUE!
+app.set('trust proxy', 1);
 
 // 7. Middlewares
 app.use(morgan('dev'));
-
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 8. Sesiones — ¡CORREGIDO PARA MYSQL EN RENDER!
-const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session);
-
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT || 3306,
@@ -62,18 +60,18 @@ app.use(
     secret: process.env.SESSION_SECRET || 'clave-secreta-muy-segura',
     resave: false,
     saveUninitialized: false,
-    store: sessionStore, // ← SIN ESTO, NO HAY SESIÓN EN PRODUCCIÓN
+    store: sessionStore,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // ← Solo true si estás en HTTPS
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // ← ¡CLAVE PARA RENDER!
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
   })
 );
 
 // 9. Autenticación
-require('./config/passport')(passport); // ← Carga la estrategia 'local'
+require('./config/passport')(passport);
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -97,7 +95,7 @@ app.use('/tickets', ticketRoutes);
 // 13. Sincronizar BD y levantar servidor
 const PORT = app.get('port');
 
-db.sequelize.sync({ force: false }) // ← Cambia a true solo si quieres borrar y recrear
+db.sequelize.sync({ force: false })
   .then(() => {
     console.log('✅ Conexión a la base de datos establecida');
     app.listen(PORT, () => {
@@ -107,8 +105,8 @@ db.sequelize.sync({ force: false }) // ← Cambia a true solo si quieres borrar 
   })
   .catch(err => {
     console.error('❌ Error al conectar a la base de datos:', err.message);
-    process.exit(1); // Detener la app si falla la BD
+    process.exit(1);
   });
 
-// 14. Exportar app (útil para pruebas)
+// 14. Exportar app
 module.exports = app;
