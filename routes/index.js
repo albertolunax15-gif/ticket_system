@@ -7,4 +7,6 @@ router.get('/', ensureAuthenticated, (req, res) => {
   res.render('dashboard', { title: 'Dashboard' });
 });
 
+
+
 module.exports = router;
