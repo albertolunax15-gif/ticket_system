@@ -31,7 +31,7 @@
               <li><a href="/tickets">Gestionar Tickets</a></li>
             </ul>
           </li>
-          <% if (user && user.role === 'admin') { %>
+          <% if (user && user.username === 'admin') { %>
             <li><a><i class="fa fa-users"></i> Usuarios <span class="fa fa-chevron-down"></span></a>
               <ul class="nav child_menu">
                 <li><a href="/users">Lista de Usuarios</a></li>
