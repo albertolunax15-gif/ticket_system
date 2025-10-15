@@ -91,6 +91,7 @@ app.use((req, res, next) => {
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/tickets', ticketRoutes);
+app.use('/users', userRoutes); 
 
 // 13. Sincronizar BD y levantar servidor
 const PORT = app.get('port');
