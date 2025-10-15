@@ -10,15 +10,16 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const morgan = require('morgan');
 const path = require('path');
-const MySQLStore = require('express-mysql-session')(session); // ← Usa la misma sesión
+const MySQLStore = require('express-mysql-session')(session);
 
 // 3. Importar modelos y configurar BD
 const db = require('./models');
 
 // 4. Importar rutas
-const indexRoutes = require('./routes/index');
-const authRoutes = require('./routes/auth');
+const indexRoutes  = require('./routes/index');
+const authRoutes   = require('./routes/auth');
 const ticketRoutes = require('./routes/tickets');
+const userRoutes   = require('./routes/users'); // ✅ FALTABA ESTA LÍNEA
 
 // 5. Inicializar app
 const app = express();
@@ -28,7 +29,7 @@ app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// 7.5. ¡TRUST PROXY! (Render está detrás de un proxy)
+// 7.5. ¡TRUST PROXY! (si estás detrás de proxy)
 app.set('trust proxy', 1);
 
 // 7. Middlewares
@@ -37,7 +38,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 8. Sesiones — ¡CORREGIDO PARA MYSQL EN RENDER!
+// 8. Sesiones — MySQL store
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT || 3306,
@@ -88,10 +89,10 @@ app.use((req, res, next) => {
 });
 
 // 12. Rutas
-app.use('/', indexRoutes);
-app.use('/auth', authRoutes);
-app.use('/tickets', ticketRoutes);
-app.use('/users', userRoutes); 
+app.use('/', indexRoutes);          // dashboard (/)  ✔️ :contentReference[oaicite:1]{index=1}
+app.use('/auth', authRoutes);       // login/logout   ✔️ :contentReference[oaicite:2]{index=2}
+app.use('/tickets', ticketRoutes);  // tickets        ✔️ :contentReference[oaicite:3]{index=3}
+app.use('/users', userRoutes);      // users          ✔️ :contentReference[oaicite:4]{index=4}
 
 // 13. Sincronizar BD y levantar servidor
 const PORT = app.get('port');
